@@ -14,12 +14,36 @@
 @interface NotesViewController ()<NoteDetailsViewControllerDelegate>
 
 @property (nonatomic, strong) NSArray *notes;
-
+@property (nonatomic, strong) NSURLSession *session;
 
 @end
 
 @implementation NotesViewController
 
+- (id)initWithCoder:(NSCoder *)aDecoder
+{
+    self = [super initWithCoder:aDecoder];
+    if (self) {
+        // 1
+        /*
+         *  return a session with no persistent storage for caches, cookies, or credentials.
+         */
+        NSURLSessionConfiguration *config = [NSURLSessionConfiguration ephemeralSessionConfiguration];
+        
+        // 2
+        /*
+         *
+         */
+        [config setHTTPAdditionalHeaders:@{@"Authorization":[Dropbox apiAuthorizationHeader]}];
+        
+        // 3
+        /*
+         *  create the NSURLSession using the above configuration
+         */
+        _session = [NSURLSession sessionWithConfiguration:config];
+    }
+    return self;
+}
 
 - (id)initWithStyle:(UITableViewStyle)style
 {
@@ -39,6 +63,36 @@
 // list files found in the root dir of appFolder
 - (void)notesOnDropbox
 {
+    [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+    // 1
+    NSURL *url = [Dropbox appRootURL];
+    
+    // 2
+    /*
+     *  create a data task in order to perform a GET request to that URL.
+     */
+    NSURLSessionDataTask *dataTask = [self.session dataTaskWithURL:url
+                                                 completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                     if (!error) {
+                                                         NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
+                                                         if (httpResp.statusCode == 200) {
+                                                             NSError *jsonError;
+                                                             
+                                                             // 2
+                                                             NSDictionary *notesJSON = [NSJSONSerialization JSONObjectWithData:data
+                                                                                                                       options:NSJSONReadingAllowFragments
+                                                                                                                         error:&jsonError];
+                                                             NSMutableArray *notesFound = [[NSMutableArray alloc] init];
+                                                             if (!jsonError) {
+                                                                 // 1
+//                                                                 NSArray *contentsOfRootDirectory = notesJSON[]
+                                                             }
+                                                         }
+                                                     }
+                                                 }];
+    
+    // 3
+    [dataTask resume];
 }
 
 - (void)didReceiveMemoryWarning
