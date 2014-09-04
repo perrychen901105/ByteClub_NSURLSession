@@ -224,6 +224,7 @@
     [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
 
     [_uploadTask resume];
+
 }
 
 #pragma mark - NSURLSessionTaskDelegate methods
