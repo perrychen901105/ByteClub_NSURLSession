@@ -55,7 +55,42 @@
 
 -(void)retreiveNoteText
 {
-
+    // 1
+    NSString *fileApi = @"https://api-content.dropbox.com/1/files/dropbox";
+    NSString *escapedPath = [_note.path stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    
+    NSString *urlStr = [NSString stringWithFormat:@"%@/%@",fileApi,escapedPath];
+    
+    NSURL *url = [NSURL URLWithString:urlStr];
+    
+    [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+    
+    // 2
+    /*
+     *  Create the data task with a URL that points to the file of interest. This call should be starting to look quite familiar as you go through this app.
+     */
+    
+    [[_session dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (!error) {
+            NSHTTPURLResponse *httpResp = (NSHTTPURLResponse *)response;
+            if (httpResp.statusCode == 200) {
+                // 3
+                
+                NSString *text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    self.textView.text = text;
+                });
+            } else {
+                
+            }
+        } else {
+            
+        }
+        // 4
+        /*
+         *
+         */
+    }] resume];
 }
 
 #pragma mark - send messages to delegate
@@ -76,7 +111,34 @@
         _note.path = _filename.text;
         
         // - UPLOAD FILE TO DROPBOX - //
-        [self.delegate noteDetailsViewControllerDoneWithDetails:self];
+//        [self.delegate noteDetailsViewControllerDoneWithDetails:self];
+        // 1
+        NSURL *url = [Dropbox uploadURLForPath:_note.path];
+        
+        // 2
+        NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
+        [request setHTTPMethod:@"PUT"];
+        
+        // 3
+        /*
+         *  encode text from UITextView into NSData Object
+         */
+        NSData *noteContents = [_note.contents dataUsingEncoding:NSUTF8StringEncoding];
+        
+        // 4
+        NSURLSessionUploadTask *uploadTask = [_session uploadTaskWithRequest:request
+                                                                    fromData:noteContents
+                                                           completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                                               NSHTTPURLResponse *httpResp = (NSHTTPURLResponse*)response;
+                                                               if (!error && httpResp.statusCode == 200) {
+                                                                   [self.delegate noteDetailsViewControllerDoneWithDetails:self];
+                                                               } else {
+                                                                   
+                                                               }
+                                                           }];
+        
+        // 5
+        [uploadTask resume];
         
     } else {
         UIAlertView *noTextAlert = [[UIAlertView alloc] initWithTitle:@"No text"

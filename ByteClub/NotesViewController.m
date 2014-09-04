@@ -85,7 +85,24 @@
                                                              NSMutableArray *notesFound = [[NSMutableArray alloc] init];
                                                              if (!jsonError) {
                                                                  // 1
-//                                                                 NSArray *contentsOfRootDirectory = notesJSON[]
+                                                                 NSArray *contentsOfRootDirectory = notesJSON[@"contents"];
+                                                                 for (NSDictionary *data in contentsOfRootDirectory) {
+                                                                     if (![data[@"is_dir"] boolValue]) {
+                                                                         DBFile *note = [[DBFile alloc] initWithJSONData:data];
+                                                                         [notesFound addObject:note];
+                                                                     }
+                                                                 }
+                                                                 
+                                                                 [notesFound sortUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+                                                                     return [obj1 compare:obj2];
+                                                                 }];
+                                                                 self.notes = notesFound;
+                                                                 
+                                                                 // 6
+                                                                 dispatch_async(dispatch_get_main_queue(), ^{
+                                                                     [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+                                                                     [self.tableView reloadData];
+                                                                 });
                                                              }
                                                          }
                                                      }
@@ -129,7 +146,7 @@
     UINavigationController *navigationController = segue.destinationViewController;
     NoteDetailsViewController *showNote = (NoteDetailsViewController*) [navigationController viewControllers][0];
     showNote.delegate = self;
-    
+    showNote.session = _session;
 
     if ([segue.identifier isEqualToString:@"editNote"]) {
         
